@@ -1,0 +1,16 @@
+ahgt=5.45; % mean height of antenna above sea surface
+plat=48.54619772; % latitude of station (degrees)
+plon=-123.00760641; % longitude of station (degrees)
+azi_low=50; % azimuth angle interval (low limit)
+azi_high=240; % azimuth angle interval (high limit)
+azi_mask=[140 150]; % additional mask
+elv_low=5; % elevation angle interval (low limit)
+elv_high=13; % elevation angle interval (high limit)
+elvlims=1; % only use satellite arcs within this amount of degrees of limits
+dt=15; % frequency of snr measurements (seconds)
+ahgt_bounds=2.5; % should be tidal range + more
+staxyz=[-2304501.4548,-3547589.3986,4757288.6268]; % XYZ of SC02
+seasfc_rough=0.18;
+resln=0.1;
+antenna_mod='TRM29659.00'; % choose antenna model
+radome_mod='SCIT'; % choose radome model
