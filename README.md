@@ -1,6 +1,3 @@
-# gnssr_synth
-Obtain and analyse GNSS-R water level observations and create synthetic SNR data
-
 In this repository are lots of functions for obtaining and analyzing GNSS-Reflectometry observations and creating synthetic SNR data as per "Quantifying the Uncertainty in Ground-Based GNSS-Reflectometry Sea Level Measurements" by Purnell et al. (2020) (IEEE JSTARS)
 
 For any questions or suggestions or issues please contact Dave Purnell:
@@ -22,6 +19,8 @@ tidemod_kl_plot
 coef2ampphase
 invsnr
 invsnr_plot
+bspline_spectral
+bspline_js
 
 The directory 'data' contains a short period of data from site 'sc02' that is used to show how to run functions in 'example_code.m'
 
@@ -57,6 +56,9 @@ http://www.mit.edu/~gari/CODE/Lomb/fLSPw.m
 http://www.eos.ubc.ca/~rich/t_tide/t_tide_v1.4beta.zip
 And move the directory inside the 'functions' directory
 
+7. Download b-spline codes for matlab by Levente Hunyadi, place the directory in the 'functions' directory.
+https://www.mathworks.com/matlabcentral/fileexchange/27374-b-splines
+
 IMPORTANT:
 The directory 'functions/fresnel' contains outdated codes written by Kristine Larson and others to produce fresnel zones. An updated version of these codes can be found at:
 https://geodesy.noaa.gov/gps-toolbox/GNSS-IR.htm
@@ -70,3 +72,7 @@ The directory 'functions/getsfiles' contains some codes for obtaining GNSS data 
 
 NOTE:
 apologies for the mess and bad code writing practices
+
+
+
+
