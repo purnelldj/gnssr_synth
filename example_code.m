@@ -191,7 +191,7 @@ clear all
 
 startdate=datenum(2015,1,2);
 enddate=datenum(2015,1,2);
-station=cellstr({'sc02'});
+station='sc02';
 %%%%%%%%%%%%%
 % observed
 snrdir=cellstr({'data/sc02/snr'});
@@ -224,7 +224,7 @@ end
 clear all
 
 startdate=datenum(2015,1,2);
-enddate=datenum(2015,1,4);
+enddate=datenum(2015,1,2);
 invdir=cellstr({'data/sc02/inv_test'});
 kspac=3/24;
 tlen=3;

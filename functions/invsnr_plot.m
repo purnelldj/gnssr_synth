@@ -1,6 +1,8 @@
 function [t_rh,rh_invjs,rh_invpre,rms_js,rms_pre] = invsnr_plot(startdate,enddate,invdir,kspac,tlen,...
     plotl,tgstring,makefig,roughnessplot)
 
+%%
+
 % this codes takes the output from invsnr.m and plots it and compares with
 % a tide gauge (if there is one)
 
@@ -51,17 +53,18 @@ while tdatenum<enddate
     if tdatenum==startdate
         inds=1;
     end
+    if tdatenum==enddate
+        inde=tlen/kspac+2*p/2;
+    end
     if exist([char(invdir(jj)),'/',num2str(tdatenum),'.mat'],'file')==2
     load([char(invdir(jj)),'/',num2str(tdatenum),'.mat'])
-    if tdatenum==enddate
-        inde=numel(sfacspre);
-    end
     sfacspreall=[sfacspreall sfacspre(inds:inde)];
     sfacsjsall=[sfacsjsall sfacsjs(inds:inde)];
     x_init=[x_init xinit];
     h_init=[h_init hinit];
     roughness_all=[roughness_all roughness];
     else
+        disp('missingdata')
     sfacspreall=[sfacspreall NaN(1,inde-inds+1)];
     sfacsjsall=[sfacsjsall NaN(1,inde-inds+1)];
     roughness_all=[roughness_all NaN];

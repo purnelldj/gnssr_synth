@@ -6,7 +6,7 @@ function [sfacsjs,sfacspre,hinit,xinit,consts_out,roughness] = invsnr(tdatenum,s
 
 % INPUTS
 % tdatenum: day or time in datenum format
-% station: should be in cellstr format, e.g., cellstr({'sc02'})
+% station: station identifier string
 % snrdir: path to SNR data, should also be in cellstr format
 % kspac: average node spacing in days (e.g., 2/24 is 2 hours)
 % tlen: length of window for analysis in days, split into 3 and the middle
@@ -41,7 +41,7 @@ gal=satconsts(3);
 pwdstr=pwd;
 addpath([pwdstr,'/functions/'])
 addpath([pwdstr,'/functions/bspline'])
-run([pwdstr,'/functions/station_inputs/',char(station(1)),'_input'])
+run([pwdstr,'/functions/station_inputs/',station,'_input'])
 if glo==1
     load('glonasswlen.mat')
 end
@@ -56,11 +56,7 @@ end
 tdatenum=tdatenum-tlen/3;
  
 curdt=datetime(tdatenum+tlen/3,'convertfrom','datenum');
-strday=char(datetime(curdt,'format','DDD'));
-stryrs=char(datetime(curdt,'format','yy'));
-strhr=char(datetime(curdt,'format','HH'));
-
-disp(['yr =',stryrs,', doy =',strday,', hr =',strhr])
+disp(char(curdt))
 
 % work out if need two days or just one
 mlen=1;
@@ -76,7 +72,7 @@ end
 % try getting day in order of station first, then after detrended, organise
 % by time, then that's it
 snrfile=[];
-for ll=1:numel(station)
+for ll=1:numel(snrdir)
     snrfilet=[];
 for m=1:mlen
     % NOW LOADING FROM tdatenum ONWARDS
@@ -84,10 +80,10 @@ for m=1:mlen
     curdtt=datetime(tdatenumt,'convertfrom','datenum');
     strdayt=char(datetime(curdtt,'format','DDD'));
     stryrst=char(datetime(curdtt,'format','yy'));
-    if exist([char(snrdir(1)),'/',num2str(tdatenumt),'.mat'],'file')==2
-        load([char(snrdir(1)),'/',num2str(tdatenumt),'.mat'])
-    elseif exist([char(snrdir(1)),'/',char(station(1)),strdayt,'0.',stryrst,'snr'])==2
-        snr_data=dlmread([char(snrdir(1)),'/',char(station(1)),strdayt,'0.',stryrst,'snr']);
+    if exist([char(snrdir(ll)),'/',num2str(tdatenumt),'.mat'],'file')==2
+        load([char(snrdir(ll)),'/',num2str(tdatenumt),'.mat'])
+    elseif exist([char(snrdir(ll)),'/',station,strdayt,'0.',stryrst,'snr'])==2
+        snr_data=dlmread([char(snrdir(ll)),'/',station,strdayt,'0.',stryrst,'snr']);
     else
         disp('missing data')
         miss=1;
@@ -105,11 +101,6 @@ if exist('miss')~=0
 end
 snrfile=[snrfile;sortrows(snrfilet,1)];
 clear snrfilet snr_data
-end
-
-if exist('miss')~=0 || size(snrfile,1)==0
-    disp('issue maybe no data')
-    return
 end
 
 if decimate~=0
@@ -256,12 +247,18 @@ t1_allt=t1_all(indt);
 maxt1gap=max(diff(sort(t1_allt)));
 if maxt1gap>kspac
     disp('gap in data bigger than node spacing')
+    sfacsjs=NaN;
+    sfacspre=NaN;
+    hinit=NaN;
+    xinit=NaN;
+    consts_out=NaN;
+    roughness=NaN;
     return
 end
 
 % for adjusting heights
-if numel(station)>1
-    for ll=1:numel(station)
+if numel(snrdir)>1
+    for ll=1:numel(snrdir)
         in=siteinit(:)==ll;
         meanhgts(ll)=nanmean(hinit(in));
         if ll>1
@@ -273,10 +270,6 @@ else
 end
 
 tmpinit=[xinit.' hinit.' tanthter.' siteinit.'];
-if size(tmpinit)<1
-    disp('no data? not sure')
-    return
-end
 tmpinit=sortrows(tmpinit,1);
 xinit=tmpinit(:,1);
 hinit=tmpinit(:,2);
@@ -325,7 +318,9 @@ tempfun=@(sfacs) bspline_js(sfacs,t1_all,sinelv1_all,snr1_all,knots,...
     p,satno_all,gps,glo,gal,antno_all,meanhgts);
 options=optimoptions(@lsqnonlin,'Algorithm','levenberg-marquardt',...
     'Display','off');
+tic
 sfacs_ls=lsqnonlin(tempfun,sfacs_0,[],[],options); %lsqnonlin or fsolve??
+toc
 disp('****least squares done****')
 
 % to plot model vs real snr data
