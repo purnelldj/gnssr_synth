@@ -127,6 +127,7 @@ enddate=datenum(2015,1,5); % including last day
 effects=[1,1,1,1];
 tempsnr=0;
 templsp=0;
+satconsts=[1 0];
 tgstring='data/sc02/tg_2015_6min.mat';
 outdir=['data/',station,'/synth_data'];
 
@@ -145,7 +146,7 @@ stryr=char(datetime(curdt,'format','yy'));
 [gpsw,sow,~]=jd2gps(curjd);
 dow=round(sow/86400-mod(sow,86400)/86400);
 sp3str=['data/sp3/com',num2str(gpsw),num2str(dow),'.sp3'];
-[snr_data,slvlr,lspy] = makesnr_fun(station,tdatenum,slvlrobs,tgstring,sp3str,effects,tempsnr,templsp);
+[snr_data,slvlr,lspy] = makesnr_fun(station,tdatenum,slvlrobs,tgstring,sp3str,effects,satconsts,tempsnr,templsp);
 disp('*************done*************')
 if exist(outdir)==0
     mkdir(outdir);

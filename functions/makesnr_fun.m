@@ -1,4 +1,4 @@
-function [snr_data,slvlr,lspy] = makesnr_fun(station,tdatenum,slvlrobs,tgstring,sp3str,effects,tempsnr,templsp)
+function [snr_data,slvlr,lspy] = makesnr_fun(station,tdatenum,slvlrobs,tgstring,sp3str,effects,satconsts,tempsnr,templsp)
 
 %%
 
@@ -21,6 +21,8 @@ function [snr_data,slvlr,lspy] = makesnr_fun(station,tdatenum,slvlrobs,tgstring,
 % the fourth entry is surface roughness
 % tempsnr: choose 1 to output figures of detrended synthetic SNR data to the
 % directory 'data/output_figs'
+% satconsts: 1 by 2 array first entry set to 1 to include GPS, GLONASS
+% e.g., [1 1] for both
 % templsp: choose 1 to output figures of Lomb-Scargle Periodogram data to the
 % directory 'data/output_figs'
 % ltdrun: use this as an option to produce a set amount of output figures
@@ -69,7 +71,8 @@ sfr=effects(4);
 
 % other
 nonstat_sfc=1;
-glonass=0; % add glonass satellites
+gps=satconsts(1);
+glo=satconsts(2);
 reslnfix=0; % SNR resolution in dB-Hz
 mag_adj=1; % turn on (1) or off (0)
 fixed_mag=0; % set the value (in dB-Hz, or 0 if taking from data
@@ -82,7 +85,6 @@ setphase=180; % change phase of SNR signal, increase to move to the right
 maxf1fix=0; % to stop
 hgtfix=0;
 scaletide=1; % scale tides by a factor !!LEAVE AT 1!!
-signal='L1'; % code needs to be modified to use other signals
 
 addpath(functionstr)
 addpath([functionstr,'/mpsim'])
@@ -147,10 +149,13 @@ it = 0;
 end
 
 % ORBIT DATA
-if glonass==1
-    satsn=32+24;
-else
-    satsn=32;
+satinds=[];
+if gps==1
+    satinds=[satinds 1:32];
+end
+if glo==1
+    satinds=[satinds 33:32+24];
+    load('glonasswlen.mat')
 end
 satmatr={'G01';'G02';'G03';'G04';'G05';'G06';'G07';'G08';'G09';...
     'G10';'G11';'G12';'G13';'G14';'G15';'G16';'G17';'G18';'G19';...
@@ -158,10 +163,11 @@ satmatr={'G01';'G02';'G03';'G04';'G05';'G06';'G07';'G08';'G09';...
     'G30';'G31';'G32';...
     'R01';'R02';'R03';'R04';'R05';'R06';'R07';'R08';'R09';...
     'R10';'R11';'R12';'R13';'R14';'R15';'R16';'R17';'R18';'R19';...
-    'R20';'R21';'R22';'R23';'R24'}; %obs would need to add in galileo
+    'R20';'R21';'R22';'R23';'R24'}; % would need to add in galileo
 orbit_data_all=[];
-for satind=1:satsn
+for kk=1:numel(satinds)
 
+satind=satinds(kk);
 satname=char(satmatr(satind));
 fid=fopen(sp3str,'r');
 
@@ -417,9 +423,11 @@ sett=snr_settings();
 if allsats(aa)<33
 sett.opt.gnss_name = 'gps';
 L1car=(physconst('LightSpeed')/1575.42e06); % for GPS
-else
+signal='L1'; % code needs to be modified to use other signals
+elseif allsats(aa)>32 && allsats(aa)<57
 sett.opt.gnss_name = 'glonass';
-L1car=(299792458/1602e06); % for GLONASS
+L1car=glonasswlen(allsats(aa)-32); % for GLONASS (not exactly right)
+signal='R1'; % code needs to be modified to use other signals
 end
 sett.opt.freq_name = signal;
 % ANTENNA / INSTRUMENTATION
@@ -569,7 +577,7 @@ if addnoise==1
     pkin=slvlrt(9);
     varint=slvlrt(10);
     powerin=rand(numpks,1);
-    coefsin=[0.1;pkin/pkinit*10]; % was 0.001
+    coefsin=[1;pkin/pkinit*10]; % was 0.001
     [powerout]=scalenoisepower(station,powerin,freqsin);
     coefsin=log(coefsin);
     tempfun=@(coefs) noisefunresid(coefs,snr_preproc,powerout,freqsin,sinelv,phaseoff,resln,...
