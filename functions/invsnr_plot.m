@@ -58,11 +58,20 @@ while tdatenum<enddate
     end
     if exist([char(invdir(jj)),'/',num2str(tdatenum),'.mat'],'file')==2
     load([char(invdir(jj)),'/',num2str(tdatenum),'.mat'])
+    if numel(sfacsjs)>1 || ~isnan(sfacsjs(1))
     sfacspreall=[sfacspreall sfacspre(inds:inde)];
     sfacsjsall=[sfacsjsall sfacsjs(inds:inde)];
     x_init=[x_init xinit];
     h_init=[h_init hinit];
+    if exist('roughness','var')==1
     roughness_all=[roughness_all roughness];
+    end
+    else
+        disp('missingdata')
+    sfacspreall=[sfacspreall NaN(1,inde-inds+1)];
+    sfacsjsall=[sfacsjsall NaN(1,inde-inds+1)];
+    roughness_all=[roughness_all NaN];
+    end
     else
         disp('missingdata')
     sfacspreall=[sfacspreall NaN(1,inde-inds+1)];
@@ -103,6 +112,7 @@ if numel(invdir)>1
         sfacsjsp(ii)=nanmedian(jstmp);
         end
     end
+    if numel(roughness_all)>1
     roughlen=enddate-startdate;
     for ii=1:roughlen
         jj=0;
@@ -116,6 +126,7 @@ if numel(invdir)>1
         else
         roughmean(ii)=nanmedian(roughtmp);
         end
+    end
     end
 else
     sfacsprep=sfacspreall;
@@ -180,7 +191,7 @@ if numel(tgstring)>0
 scatter(tidex,tidey,1,'k')
 hold on
 end
-scatter(x_init,h_init,'b+')
+%scatter(x_init,h_init,'b+')
 hold on
 plot(t_rh,rh_invjs,'b','linewidth',2)
 plot(t_rh,rh_invpre,'b--','linewidth',1)

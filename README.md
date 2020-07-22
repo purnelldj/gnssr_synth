@@ -35,6 +35,7 @@ https://geodesy.noaa.gov/gps-toolbox/MPsimul.htm
 2. You also need to download the following 3 codes from the Geodetic toolbox made by Mike Craymer and place them in the 'functions' directory:
 doy2jd.m
 jd2gps.m
+gps2jd.m
 cal2jd.m
 Download link:
 https://www.mathworks.com/matlabcentral/fileexchange/15285-geodetic-toolbox?focused=6513448&tab=function&s_tid=mwa_osa_a
