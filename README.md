@@ -1,5 +1,8 @@
 
-In this repository are lots of functions for obtaining and analyzing GNSS-Reflectometry observations and creating synthetic SNR data as per "Quantifying the Uncertainty in Ground-Based GNSS-Reflectometry Sea Level Measurements" by Purnell et al. (2020) (IEEE JSTARS)
+In this repository are functions for obtaining, analyzing and estimating the precision of ground-based GNSS-Reflectometry sea level observations.  This includes functions for creating synthetic SNR data and obtaining sea level measurements via spectral analysis or via inverse modelling of SNR data, as per https://doi.org/10.1109/JSTARS.2020.3010413.
+
+The codes can be cited as follows:
+Purnell, D.J., Gomez, N., Chan, N.H., Strandberg, J., Holland, D.H. and Hobiger, T. (2020). Quantifying the uncertainty in ground-based GNSS-Reflectometry sea level measurements. IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing (JSTARS) doi: 10.1109/JSTARS.2020.3010413.
 
 For any questions or suggestions or issues please contact Dave Purnell:
 david.purnell@mail.mcgill.ca
@@ -35,7 +38,6 @@ https://geodesy.noaa.gov/gps-toolbox/MPsimul.htm
 2. You also need to download the following 3 codes from the Geodetic toolbox made by Mike Craymer and place them in the 'functions' directory:
 doy2jd.m
 jd2gps.m
-gps2jd.m
 cal2jd.m
 Download link:
 https://www.mathworks.com/matlabcentral/fileexchange/15285-geodetic-toolbox?focused=6513448&tab=function&s_tid=mwa_osa_a
@@ -64,7 +66,7 @@ https://www.mathworks.com/matlabcentral/fileexchange/27374-b-splines
 IMPORTANT:
 The directory 'functions/fresnel' contains outdated codes written by Kristine Larson and others to produce fresnel zones. An updated version of these codes can be found at:
 https://geodesy.noaa.gov/gps-toolbox/GNSS-IR.htm
-I am using the old version because I am too lazy to update it.
+I am using the old version because I prefer it to the newer version.
 
 ADDING OTHER SITES:
 The directory 'functions/station_inputs' contains parameters for several different sites. If you want to analyze data at a site that is not there, you will need to create a station_input.m file for the new station. A description of the parameters is given in the 'sc02_input.m' file
