@@ -204,15 +204,15 @@ kspac=3/24;
 tlen=3;
 decimate=0; % in seconds
 satconsts=[1 0 0];
-sfcrough=0.1;
+roughin=0.1;
 altelvlims=[];
 largetides=1;
 
 tdatenum=startdate-1;
 while tdatenum<enddate
 tdatenum=tdatenum+1;
-[sfacsjs,sfacspre,hinit,xinit,consts_out,roughness] = invsnr(tdatenum,station,snrdir,kspac,tlen,decimate,...
-    satconsts,sfcrough,altelvlims,largetides);
+[sfacsjs,sfacspre,hinit,xinit,consts_out,roughout] = invsnr(tdatenum,station,snrdir,...
+    kspac,tlen,decimate,satconsts,altelvlims,largetides,roughin);
 if exist(outdir)==0
     mkdir(outdir);
 end

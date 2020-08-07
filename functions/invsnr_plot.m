@@ -31,12 +31,12 @@ pwdstr=pwd;
 addpath([pwdstr,'/functions/bspline'])
 
 meanormedian=2;
-domeanheights=1;
+domeanheights=2;
 p=2;
 
-knots=[(startdate-1)*ones(1,p) ...
-    startdate-1:kspac:enddate+2 ...
-    (enddate+2)*ones(1,p)];
+knots=[(startdate-tlen/3)*ones(1,p) ...
+    startdate-tlen/3:kspac:enddate+1+tlen/3 ...
+    (enddate+1+tlen/3)*ones(1,p)];
 t_rh=startdate:plotl:enddate+1;
 
 sfacspreall=[];
@@ -45,18 +45,19 @@ x_init=[];
 h_init=[];
 roughness_all=[];
 for jj=1:numel(invdir)
-tdatenum=startdate-1;
-while tdatenum<enddate
-    tdatenum=tdatenum+1;
+tdatenum=startdate-tlen/3;
+while round(tdatenum,10,'significant')<round(enddate+1-tlen/3,10,'significant')
+    tdatenum=tdatenum+tlen/3;
     inds=tlen/(3*kspac)+2;
     inde=(2*tlen)/(3*kspac)+1;
     if tdatenum==startdate
         inds=1;
     end
-    if tdatenum==enddate
-        inde=tlen/kspac+2*p/2;
+    if round(tdatenum,10,'significant')>=...
+            round(enddate+1-tlen/3,10,'significant')
+        inde=tlen/kspac+p;
     end
-    if exist([char(invdir(jj)),'/',num2str(tdatenum),'.mat'],'file')==2
+    if exist([char(invdir(jj)),'/',num2str(round(tdatenum,10,'significant')),'.mat'],'file')==2
     load([char(invdir(jj)),'/',num2str(tdatenum),'.mat'])
     if numel(sfacsjs)>1 || ~isnan(sfacsjs(1))
     sfacspreall=[sfacspreall sfacspre(inds:inde)];
@@ -65,6 +66,8 @@ while tdatenum<enddate
     h_init=[h_init hinit];
     if exist('roughness','var')==1
     roughness_all=[roughness_all roughness];
+    else
+    roughness_all=[roughness_all NaN];
     end
     else
         disp('missingdata')
@@ -86,14 +89,27 @@ if numel(invdir)>1
     if domeanheights==1
     for kk=1:numel(invdir)
         % for adjusting heights
-        meanhgts(kk)=nanmean(sfacsjsall((kk-1)*indfac+1:kk*indfac));
+        %meanhgts(kk)=nanmean(sfacsjsall((kk-1)*indfac+1:kk*indfac));
+        % SO THAT IT DOESN'T INCLUDE THE LAST AND FIRST DAY
+        meanhgts(kk)=nanmean(sfacsjsall((kk-1)*indfac+tlen/(3*kspac)+2:kk*indfac-tlen/(3*kspac)-1));
         if kk>1
             sfacsjsall((kk-1)*indfac+1:kk*indfac)=...
                 sfacsjsall((kk-1)*indfac+1:kk*indfac)+meanhgts(1)-meanhgts(kk);
         end
     end
+    elseif domeanheights==2
+    for kk=1:numel(invdir)
+        stationt=char(invdir(kk));
+        stationt=stationt(8:12);
+        run(['functions/station_inputs/',stationt,'_input.m'])
+        ahgt_all(kk)=ahgt;
+        if kk>1
+            sfacsjsall((kk-1)*indfac+1:kk*indfac)=...
+                sfacsjsall((kk-1)*indfac+1:kk*indfac)+ahgt_all(1)-ahgt_all(kk);
+        end
     end
-    %meanhgts-meanhgts(1)
+    end
+    %meanhgts
     %return
     for ii=1:indfac
         jj=0;
@@ -136,6 +152,7 @@ end
 
 rh_invjs=bspline_deboor(p+1,knots,sfacsjsp,t_rh);
 rh_invpre=bspline_deboor(p+1,knots,sfacsprep,t_rh);
+save('invoutput.mat','t_rh','rh_invjs','rh_invpre','x_init','h_init')
 
 if numel(tgstring)>1
 load(tgstring)
@@ -188,13 +205,13 @@ subplot(2,1,1)
 end
 if numel(tgstring)>0
 %tideyt=tideyt-nanmean(tideyt);
-scatter(tidex,tidey,1,'k')
+scatter(tidex,tidey,2,'k')
 hold on
 end
 %scatter(x_init,h_init,'b+')
 hold on
-plot(t_rh,rh_invjs,'b','linewidth',2)
-plot(t_rh,rh_invpre,'b--','linewidth',1)
+plot(t_rh,rh_invjs,'b','linewidth',1.5)
+%plot(t_rh,rh_invpre,'b--','linewidth',1)
 axis([startdate enddate+1 -inf inf])
 ylabel('Sea level (m)','interpreter','latex','fontsize',fsz)
 datetick('x',1,'keeplimits','keepticks')

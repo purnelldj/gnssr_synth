@@ -1,6 +1,8 @@
-function [sfacsjs,sfacspre,hinit,xinit,consts_out,roughness] = invsnr(tdatenum,station,snrdir,kspac,tlen,decimate,...
-    satconsts,sfcrough,altelvlims,largetides)
+function [sfacsjs,sfacspre,hinit,xinit,consts_out,roughout] = invsnr_chooserough(tdatenum,station,snrdir,kspac,tlen,decimate,...
+    satconsts,altelvlims,largetides,roughin)
 
+
+%%
 % this code is for inverse modelling of SNR data to get GNSS-R measurements
 % as per Strandberg et al. (2016)
 
@@ -14,11 +16,11 @@ function [sfacsjs,sfacspre,hinit,xinit,consts_out,roughness] = invsnr(tdatenum,s
 % decimate: decimate input SNR data (in seconds)
 % satconsts: 1 by 3 double, 1 or 0 to include satellite constellations
 % GPS, GLONASSS, GALILEO (e.g., [1 0 1] for GPS and GALILEO)
-% sfcrough: initial sfc roughness guess ('s') in metres for least squares
-% adjustment
 % altelvlims: to overwrite the elevation limits in the station input file
 % and use alternate ones, e.g., [5 15] for 5 to 15 degrees
 % largetides: changes the initial guess for node values (1 or 0)
+% roughin: initial sfc roughness guess ('s') in metres for least squares
+% adjustment, set to '' if don't want to use roughness
 
 % OUTPUTS
 % these outputs are to go with the function 'invsnr_plot.m'
@@ -76,7 +78,7 @@ for ll=1:numel(snrdir)
     snrfilet=[];
 for m=1:mlen
     % NOW LOADING FROM tdatenum ONWARDS
-    tdatenumt=tdatenum+m-1;
+    tdatenumt=tdatenum-mod(tdatenum,1)+m-1;
     curdtt=datetime(tdatenumt,'convertfrom','datenum');
     strdayt=char(datetime(curdtt,'format','DDD'));
     stryrst=char(datetime(curdtt,'format','yy'));
@@ -101,6 +103,17 @@ if exist('miss')~=0
 end
 snrfile=[snrfile;sortrows(snrfilet,1)];
 clear snrfilet snr_data
+end
+
+if numel(snrfile)==0
+    disp('no data - go to next day')
+    sfacsjs=NaN;
+    sfacspre=NaN;
+    hinit=NaN;
+    xinit=NaN;
+    consts_out=NaN;
+    roughness=NaN;
+    return
 end
 
 if decimate~=0
@@ -245,6 +258,9 @@ end
 indt=t1_all(:)>tdatenum+tlen/3 & t1_all(:)<tdatenum+2*tlen/3;
 t1_allt=t1_all(indt);
 maxt1gap=max(diff(sort(t1_allt)));
+%maxt1gapt=maxt1gap*1440
+%scatter(t1_all,snr1_all)
+%return
 if maxt1gap>kspac
     disp('gap in data bigger than node spacing')
     sfacsjs=NaN;
@@ -299,7 +315,7 @@ hinit=hinit(in).';
 sfacspre=sfacs_init;
 
 disp('joakim part')
-doprev=1;
+doprev=0;
 if exist('sfacsjs')==0 || doprev==0
 if largetides==1
 sfacs_0=sfacs_init;
@@ -308,14 +324,19 @@ sfacs_0=median(hinit)*ones(size(sfacs_init));
 end
 else
 inds=tlen/(3*kspac)+2;
-sfacs_0=sfacsjs(inds:end-1);
+sfacs_0=sfacsjs(inds:end);
 sfacs_0=[sfacs_0(1)*ones(1,p-1) sfacs_0 sfacs_0(end)*ones(1,tlen/(3*kspac)+p-1)];
 end
 consts=gps+glo+gal;
 sfacs_0=[sfacs_0 zeros(1,consts*2)];
-sfacs_0=[sfacs_0 sfcrough]; % OK SO SFR ROUGH SHOULD BE 0 IF MODEL OR 0.001
+if numel(roughin)>0
+sfacs_0=[sfacs_0 roughin];
 tempfun=@(sfacs) bspline_js(sfacs,t1_all,sinelv1_all,snr1_all,knots,...
     p,satno_all,gps,glo,gal,antno_all,meanhgts);
+else
+tempfun=@(sfacs) bspline_jsnorough(sfacs,t1_all,sinelv1_all,snr1_all,knots,...
+    p,satno_all,gps,glo,gal,antno_all,meanhgts);
+end
 options=optimoptions(@lsqnonlin,'Algorithm','levenberg-marquardt',...
     'Display','off');
 tic
@@ -332,9 +353,15 @@ residout=bsp_snrout(sfacs_ls,t1_all,sinelv1_all,snr1_all,knots,...
 disp('done')
 end
 
+if numel(roughin)>0
 sfacsjs=sfacs_ls(1:end-consts*2-1);
 consts_out=sfacs_ls(end-consts*2:end-1);
-roughness=sfacs_ls(end);
+roughout=sfacs_ls(end);  
+else
+sfacsjs=sfacs_ls(1:end-consts*2);
+consts_out=sfacs_ls(end-consts*2:end);
+roughout=NaN;
+end
 
 
 end
