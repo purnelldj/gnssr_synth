@@ -30,7 +30,7 @@ function [sfacsjs,sfacspre,hinit,xinit,consts_out,roughout] = invsnr_chooserough
 % xinit: timing of spectral analysis estimates
 % consts_out: the other variables estimated as part of least squares
 % adjustment
-% roughness: the roughness parameter that is estimated in least squares
+% roughout: the roughness parameter that is estimated in least squares
 % adjustment
 
 p=2; % bspline order
@@ -112,7 +112,7 @@ if numel(snrfile)==0
     hinit=NaN;
     xinit=NaN;
     consts_out=NaN;
-    roughness=NaN;
+    roughout=NaN;
     return
 end
 
@@ -268,7 +268,7 @@ if maxt1gap>kspac
     hinit=NaN;
     xinit=NaN;
     consts_out=NaN;
-    roughness=NaN;
+    roughout=NaN;
     return
 end
 
