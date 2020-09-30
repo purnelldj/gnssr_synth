@@ -362,7 +362,7 @@ plot(asind(sinelv),SNR1dt,'b','linewidth',0.8)
 xlabel('Elevation angle','interpreter','latex','fontsize',fsz)
 ylabel('$\delta SNR$','interpreter','latex','fontsize',fsz)
 set(gca,'ticklabelinterpreter','latex','fontsize',fsz-1)
-axis([elv_low elv_high -200 200])
+axis([elv_low elv_high -50 50])
 print([pwdstr,'/tempoutput/SNR_',num2str(allsats(aa)),'_',...
     num2str(round(mean(sat2tr(:,4)))),...
     '.png'],'-dpng','-r300')
@@ -406,6 +406,10 @@ end
 slvlr(cnt,4)=min(sat2tr(:,2));                          % THETA MIN
 slvlr(cnt,5)=max(sat2tr(:,2));                          % THETA MAX
 slvlr(cnt,6)=nanmean(sat2tr(:,3));                      % MEAN AZI
+%disp('it would display otherwise though yes?')
+%if nanmean(sat2tr(:,3))<azi_low || nanmean(sat2tr(:,3))>azi_high
+%    disp('issue?')
+%end
 % signal stats
 % l1
 if nol1==0

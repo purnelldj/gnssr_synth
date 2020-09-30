@@ -21,9 +21,9 @@ outdir='snr'; % output directory
 sp3option=1;
 elv_lims=[0 40];
 azi_lims=[0 360];
-dt=15;
+dt=15; % the frequency of data (in seconds)
 
-% note this is just to get staxyz
+% note this is just to get staxyz, lat and lon
 run(['functions/station_inputs/',station,'_input.m'])
 
 addpath('functions')
@@ -49,7 +49,8 @@ else
 end
 
 % choose an option for the sp3 files
-% still not sure which is best....
+% option 3 best for multi-GNSS
+% get sp3 files using functions/getfiles/getsp3.m
 if sp3option==1
 % OPTION 1
 sp3str=[datastr,'sp3/com',num2str(gpsw),num2str(round(dow)),'.sp3'];
@@ -80,7 +81,7 @@ end
 %% then analyze some observed SNR data (analyzesnr_fun.m)
 
 station='sc02';
-satconsts=[1,0,0];
+satconsts=[1,0,0]; % just GPS
 tropd=0;
 decimate=15;
 tempsnr=0;
@@ -172,9 +173,9 @@ enddate=datenum(2015,1,5);
 station='sc02';
 %%%%%%%%%%%
 % for observed data
-%slvlrdir='data/sc02/obs_stats';
+slvlrdir='data/sc02/obs_stats';
 % for synthetic data produced above
-slvlrdir='data/sc02/synth_data';
+%slvlrdir='data/sc02/synth_data';
 %%%%%%%%%%%%
 tgstring='data/sc02/tg_2015_6min.mat';
 redconstits=1;
@@ -194,29 +195,31 @@ enddate=datenum(2015,1,2);
 station='sc02';
 %%%%%%%%%%%%%
 % observed
-snrdir=cellstr({'data/sc02/snr'});
-outdir='data/sc02/inv_test';
+%snrdir=cellstr({'data/sc02/snr'});
+%outdir='data/sc02/inv_test';
 % synthetic
-%snrdir=cellstr({'data/sc02/synth_data'});
-%outdir='data/sc02/inv_test_synth';
+snrdir=cellstr({'data/sc02/synth_data'});
+outdir='data/sc02/inv_test_synth';
 %%%%%%%%%%%%%
-kspac=3/24;
-tlen=3;
+kspac=3/24; % in days
+tlen=18/24; % in days
 decimate=0; % in seconds
 satconsts=[1 0 0];
 roughin=0.1;
 altelvlims=[];
 largetides=1;
+skipjs=0;
 
-tdatenum=startdate-1;
-while tdatenum<enddate
-tdatenum=tdatenum+1;
+tdatenum=startdate-tlen/3;
+while round(tdatenum,10,'significant')<round(enddate+1-tlen/3,10,'significant')
+tdatenum=tdatenum+tlen/3;
 [sfacsjs,sfacspre,hinit,xinit,consts_out,roughout] = invsnr(tdatenum,station,snrdir,...
-    kspac,tlen,decimate,satconsts,altelvlims,largetides,roughin);
+    kspac,tlen,decimate,satconsts,altelvlims,largetides,roughin,skipjs);
 if exist(outdir)==0
     mkdir(outdir);
 end
-save([outdir,'/',num2str(tdatenum),'.mat'],'sfacsjs','sfacspre','hinit','xinit','consts_out','roughness')
+save([outdir,'/',num2str(round(tdatenum,10,'significant')),'.mat'],...
+    'sfacsjs','sfacspre','hinit','xinit','consts_out','roughout')
 end
 
 %% to plot inverse reflector height estimates and compare with tide gauge or reference (invsnr_plot.m)
@@ -227,7 +230,7 @@ startdate=datenum(2015,1,2);
 enddate=datenum(2015,1,2);
 invdir=cellstr({'data/sc02/inv_test'});
 kspac=3/24;
-tlen=3;
+tlen=18/24;
 plotl=1/(24*60);
 tgstring='data/sc02/tg_2015_6min.mat';
 makefig=1;

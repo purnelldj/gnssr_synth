@@ -32,7 +32,8 @@ tmpc=0;
 if gps==1
 tmpc=tmpc+1;
 gps=satno_all(:,1)<33;
-L1car=(299792458/(1575.42e06/1.023)); % for GPS
+%L1car=(299792458/(1575.42e06/1.023)); % for GPS
+L1car=(299792458/(1575.42e06)); % for GPS
 L1k=(2*pi)/L1car;
 modelSNR1 = (coefs_0(end-1)*sin((4*pi*h1(gps).*sinelv1_all(gps))/L1car)+...
     coefs_0(end-2)*cos((4*pi*h1(gps).*sinelv1_all(gps))/L1car)).*...
@@ -46,7 +47,7 @@ glo=satno_all(:,1)>32 & satno_all(:,1)<57;
 load('glonasswlen.mat')
 satnotmp=satno_all(glo,1);
 for ij=1:numel(satnotmp)
-L1car(ij)=glonasswlen(satnotmp(ij)-32);
+    L1car(ij)=glonasswlen(satnotmp(ij)-32);
 end
 L1car=L1car.';
 L1k=(2*pi)./L1car;
@@ -59,7 +60,8 @@ end
 if gal==1
 tmpc=tmpc+1;
 gal=satno_all(:,1)>56;
-L1car=(299792458/(1575.42e06/1.023)); % for Galileo
+%L1car=(299792458/(1575.42e06/1.023)); % for Galileo
+L1car=299792458/1575.42e06; % for Galileo
 L1k=(2*pi)/L1car;
 modelSNR1 = (coefs_0(end-(tmpc-1)*2-1)*sin((4*pi*h1(gal).*sinelv1_all(gal))/L1car)+...
     coefs_0(end-(tmpc-1)*2-2)*cos((4*pi*h1(gal).*sinelv1_all(gal))/L1car)).*...

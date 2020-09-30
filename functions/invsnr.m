@@ -1,5 +1,5 @@
-function [sfacsjs,sfacspre,hinit,xinit,consts_out,roughout] = invsnr_chooserough(tdatenum,station,snrdir,kspac,tlen,decimate,...
-    satconsts,altelvlims,largetides,roughin)
+function [sfacsjs,sfacspre,hinit,xinit,consts_out,roughout] = invsnr(tdatenum,station,snrdir,...
+    kspac,tlen,decimate,satconsts,altelvlims,largetides,roughin,skipjs)
 
 
 %%
@@ -21,6 +21,8 @@ function [sfacsjs,sfacspre,hinit,xinit,consts_out,roughout] = invsnr_chooserough
 % largetides: changes the initial guess for node values (1 or 0)
 % roughin: initial sfc roughness guess ('s') in metres for least squares
 % adjustment, set to '' if don't want to use roughness
+% skipjs: skip the least squares adjustment as per strandberg et. al and
+% instead just fit the b-spline curve using spectral analysis estimates
 
 % OUTPUTS
 % these outputs are to go with the function 'invsnr_plot.m'
@@ -45,7 +47,7 @@ addpath([pwdstr,'/functions/'])
 addpath([pwdstr,'/functions/bspline'])
 run([pwdstr,'/functions/station_inputs/',station,'_input'])
 if glo==1
-    load('glonasswlen.mat')
+    load([pwdstr,'/functions/glonasswlen.mat'])
 end
 if decimate~=0
     dt=decimate;
@@ -106,7 +108,7 @@ clear snrfilet snr_data
 end
 
 if numel(snrfile)==0
-    disp('no data - go to next day')
+    disp('no data - continue')
     sfacsjs=NaN;
     sfacspre=NaN;
     hinit=NaN;
@@ -182,8 +184,8 @@ while stopp==1
     curdt=snrfile(ind,9)-snrfile(ind-1,9);
     if ind-stind>1
     if snrfile(ind,1)~=cursat || ind==size(snrfile,1) || abs(curdt)>=3*dtdv...
-            || fwd2~=fwd1 || snrfile(ind,2)==snrfile(ind-1,2)
-        if ind-stopp-stind<(300/dt)
+            || fwd2~=fwd1 || snrfile(ind,2)==snrfile(ind-1,2) || ind-stopp-stind>(3600/dt) % was 3600
+        if ind-stopp-stind<(300/dt) % was 300 then 1200
             snrfile(stind:ind-stopp,:)=[];
             ind=stind;
         else
@@ -214,11 +216,13 @@ while stopp==1
             snr1tmp=flipud(snr1tmp);
         end
         if snrfile(stind,1)<33
-        L1car=(299792458/(1575.42e06/1.023)); % for GPS
-        elseif snrfile(stind,1)<57
+        %L1car=(299792458/(1575.42e06/1.023)); % for GPS
+        L1car=299792458/1575.42e06; % for GPS
+        elseif snrfile(stind,1)>32 && snrfile(stind,1)<57
         L1car=glonasswlen(snrfile(stind,1)-32);
-        elseif  snrfile(stind,1)>56
-        L1car=(299792458/(1575.42e06/1.023));
+        elseif snrfile(stind,1)>56
+        %L1car=(299792458/(1575.42e06/1.023));
+        L1car=299792458/1575.42e06;
         end
         maxf1=numel(sinelvt1)/(2*(max(sinelvt1)-min(sinelvt1)));
         ovs=round(L1car/(2*prec1*(max(sinelvt1)-min(sinelvt1))));
@@ -255,14 +259,12 @@ while stopp==1
     fwd2=fwd1;
 end
 
-indt=t1_all(:)>tdatenum+tlen/3 & t1_all(:)<tdatenum+2*tlen/3;
-t1_allt=t1_all(indt);
-maxt1gap=max(diff(sort(t1_allt)));
-%maxt1gapt=maxt1gap*1440
-%scatter(t1_all,snr1_all)
+%scatter(xinit,-hinit)
+%axis([tdatenum+tlen/3 tdatenum+2*tlen/3 -inf inf])
 %return
-if maxt1gap>kspac
-    disp('gap in data bigger than node spacing')
+
+if min(t1_all)>tdatenum+tlen/3 || numel(xinit)<2
+    disp('not enough data - continue')
     sfacsjs=NaN;
     sfacspre=NaN;
     hinit=NaN;
@@ -300,6 +302,40 @@ xinit(delete)=[];
 tanthter(delete)=[];
 siteinit(delete)=[];
 
+if largetides==0
+indt=t1_all(:)>tdatenum+tlen/3 & t1_all(:)<tdatenum+2*tlen/3;
+t1_allt=t1_all(indt);
+maxt1gap=max(diff(sort(t1_allt)));
+else 
+indt=xinit(:)>tdatenum+tlen/3 & xinit(:)<tdatenum+2*tlen/3;
+indt=find(indt);
+if min(indt)~=1
+    indt=[min(indt)-1;indt];
+end
+if max(indt)~=numel(xinit)
+    indt=[indt;max(indt)+1];
+end
+xinitt=xinit(indt);
+maxt1gap=max(diff(sort(xinitt)));
+end
+disp(['max gap is ',num2str(maxt1gap*24*60),' minutes'])
+%scatter(xinit,hinit)
+%scatter(t1_all,snr1_all)
+%return
+
+if  numel(maxt1gap)==0 || maxt1gap>kspac ||...
+        max(xinit)<tdatenum+2*tlen/3 || min(xinit)>tdatenum+tlen/3
+    disp('gap in data bigger than node spacing')
+    disp('continue with risk of instabilities')
+    %sfacsjs=NaN;
+    %sfacspre=NaN;
+    %hinit=NaN;
+    %xinit=NaN;
+    %consts_out=NaN;
+    %roughout=NaN;
+    %return
+end
+
 knots=[tdatenum*ones(1,p) ...
     tdatenum:kspac:tdatenum+tlen ...
     (tdatenum+tlen)*ones(1,p)];
@@ -314,6 +350,7 @@ xinit=xinit(in).';
 hinit=hinit(in).';
 sfacspre=sfacs_init;
 
+if skipjs==0
 disp('joakim part')
 doprev=0;
 if exist('sfacsjs')==0 || doprev==0
@@ -360,6 +397,12 @@ roughout=sfacs_ls(end);
 else
 sfacsjs=sfacs_ls(1:end-consts*2);
 consts_out=sfacs_ls(end-consts*2:end);
+roughout=NaN;
+end
+
+else
+sfacsjs=sfacspre;
+consts_out=NaN;
 roughout=NaN;
 end
 

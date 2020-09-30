@@ -1,5 +1,5 @@
-function [t_rh,rh_adj,rh_nadj,rms_adj,rms_nadj] = spectralanalysis_kl(startdate,enddate,station,slvlrdir,tgstring,...
-    redconstits,doelvlims,removeoutliers,makefig)
+function [t_rh,rh_adj,rh_nadj,rms_adj,rms_nadj] = spectralanalysis_kl(startdate,...
+    enddate,station,slvlrdir,tgstring,redconstits,doelvlims,removeoutliers,makefig)
 
 % this function takes spectral analysis estimates of SNR data and other
 % stats from observations (obtained using analyzesnr_fun.m)
@@ -36,8 +36,9 @@ function [t_rh,rh_adj,rh_nadj,rms_adj,rms_nadj] = spectralanalysis_kl(startdate,
 l1=1; % L1 signal choose (1) or (0)
 l2=0; % L2 signal choose (1) or (0)
 % constellations
-glo=0; % choose (1) or (0)
 gps=1; % choose (1) or (0)
+glo=1; % choose (1) or (0)
+gal=1; % choose (1) or (0)
 % for looking at the direction of satellite overpassess
 justfwd=0; % 1 for fwd, 2 for not fwd, 0 for off (all data)
 
@@ -77,12 +78,16 @@ end
 
 % getting desired satellite constellations
 % need to add galileo and beidou
-if glo==0
-    delete=slvlr(:,2)>32;
-    slvlr(delete,:)=[];
-end
 if gps==0
     delete=slvlr(:,2)<33;
+    slvlr(delete,:)=[];
+end
+if glo==0
+    delete=slvlr(:,2)>32 & slvlr(:,2)<57;
+    slvlr(delete,:)=[];
+end
+if gal==0
+    delete=slvlr(:,2)>56;
     slvlr(delete,:)=[];
 end
 
@@ -93,6 +98,9 @@ if doelvlims==1
     delete=abs(slvlr(:,5)-elv_high)>elvlims;
     slvlr(delete,:)=[];
 end
+
+%scatter(slvlr(:,1),-slvlr(:,7))
+%return
 
 % removing mean from time series
 tempmean=nanmean(slvlr(:,7));
@@ -198,18 +206,20 @@ set(0, 'defaultFigurePaperPosition', defsize);
 close all  
 
 figure('visible','on')
+if numel(tgstring)>0
 plot(tidexp,tideyp,'k','linewidth',1.5)
+end
 hold on
-scatter(t_rh,rh_nadj,'r','linewidth',1)
+scatter(t_rh,rh_nadj,'r+','linewidth',1)
 hold on
-scatter(t_rh,rh_adj,'b','linewidth',1.5)
-h=legend('tide gauge','LSP estimates','with correction');
-axis([startdate enddate+1 -2 2.5])
+%scatter(t_rh,rh_adj,'b+','linewidth',1.5)
+%h=legend('tide gauge','LSP estimates','with correction');
+%set(h,'interpreter','latex','fontsize',fs)
+axis([startdate enddate+1 -inf inf])
 fs=15;
 datetick('x',1,'keeplimits','keepticks')
 ylabel('Sea level (m)','interpreter','latex','fontsize',fs)
 set(gca,'ticklabelinterpreter','latex','fontsize',fs)
-set(h,'interpreter','latex','fontsize',fs)
 print('spectralanalysis_testfig', '-dpng', '-r300');
 end
 
